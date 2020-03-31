@@ -5,8 +5,10 @@
 Setting up CI/CD
 ================
 
-Developping a bot looks a little different than developping a traditional software application, 
-but that doesn't mean you should abandon software development best practices. Setting up CI/CD ensures that incremental updates to your bot are improving it, not harming it.
+Developping a bot looks a little different than developping a traditional
+software application, but that doesn't mean you should abandon software
+development best practices. Setting up CI/CD ensures that incremental updates
+to your bot are improving it, not harming it.
 
 .. contents::
    :local:
@@ -16,19 +18,27 @@ but that doesn't mean you should abandon software development best practices. Se
 Overview
 --------
 
-Continous Integration (CI) is the practice of merging in code changes frequently, 
-and automatically testing changes as they are committed.
-Continuous Deployment (CD) means
-automatically deploying integrated changes to a staging or production
-environment. Together, they allow for more frequent improvements to your
-assistant with less manual effort expended on testing and deployment.
+Continous Integration (CI) is the practice of merging in code changes
+frequently, and automatically testing changes as they are committed. Continuous
+Deployment (CD) means automatically deploying integrated changes to a staging
+or production environment. Together, they allow for more frequent improvements
+to your assistant with less manual effort expended on testing and deployment.
 
-This guide will cover **what** should go in a CI/CD pipeline, specific to a Rasa project. **How** you implement that pipeline is up to you. There are many CI/CD tools out there, and you might already have a preferred one. Many Git repository hosting services like Github, Gitlab, and Bitbucket also provide their own CI/CD tools that you can make use of. 
+This guide will cover **what** should go in a CI/CD pipeline, specific to a
+Rasa project. **How** you implement that pipeline is up to you. There are many
+CI/CD tools out there, and you might already have a preferred one. Many Git
+repository hosting services like Github, Gitlab, and Bitbucket also provide
+their own CI/CD tools that you can make use of. 
 
 Continuous Integration
 ----------------------
 
-Assistants are best improved with frequent, incremental updates. No matter how small a change is, you want to be sure that it doesn't introduce new problems or negatively impact the performance of your model. Most tests are quick enough to run on every change. However, you can set some more resource-intentsive tests to run only when certain files have been changed or when a certain tag is present.
+Assistants are best improved with frequent, incremental updates. No matter how
+small a change is, you want to be sure that it doesn't introduce new problems
+or negatively impact the performance of your model. Most tests are quick enough
+to run on every change. However, you can set some more resource-intentsive
+tests to run only when certain files have been changed or when a certain tag is
+present.
 
 CI checks usually run on commit, or on merge/pull request.
 
@@ -51,44 +61,65 @@ Validate Stories
 
 :ref:`Story validation <test-story-files-for-conflicts>` checks if you have any
 stories where different bot actions follow from the same dialogue history.
-Conflicts between stories will prevent Rasa from learning the correct pattern. You can
-run story validation by passing the ``--max-history`` flag to ``rasa data
-validate``, either in a seperate check or as part of the data validation check.
+Conflicts between stories will prevent Rasa from learning the correct pattern.
+You can run story validation by passing the ``--max-history`` flag to ``rasa
+data validate``, either in a seperate check or as part of the data validation
+check.
 
 Train a model
 #############
 
-Training a model verifies that your NLU pipeline and policy configurations are valid and trainable, and it provides a model to test on end-to-end test stories. Training a model is also :ref:`part of the continuous deployment process <uploading-a-model>`, as you'll need a model to upload to your server. 
+Training a model verifies that your NLU pipeline and policy configurations are
+valid and trainable, and it provides a model to test on end-to-end test
+stories. Training a model is also :ref:`part of the continuous deployment
+process <uploading-a-model>`, as you'll need a model to upload to your server. 
 
 End-to-End Testing
 ##################
 
-Testing your trained model on :ref:`end-to-end test stories <end-to-end-testing>` is the best way to
-have confidence in how your assistant will act in certain situations. These
-stories, written in a modified story format, allow you to provide entire
-conversations and test that, given this user input, your model will behave in the expected manner. This is especially important as you start introducing more complicated stories from user conversations. End-to-end testing is only as thorough and accurate as the test cases you write, so you should always update your end-to-end stories concurrently with your training stories.
+Testing your trained model on :ref:`end-to-end test stories
+<end-to-end-testing>` is the best way to have confidence in how your assistant
+will act in certain situations. These stories, written in a modified story
+format, allow you to provide entire conversations and test that, given this
+user input, your model will behave in the expected manner. This is especially
+important as you start introducing more complicated stories from user
+conversations. End-to-end testing is only as thorough and accurate as the test
+cases you write, so you should always update your end-to-end stories
+concurrently with your training stories.
 
-Note: End-to-end stories do **not** execute your action code. You will need to test your action code in a seperate step.
+Note: End-to-end stories do **not** execute your action code. You will need to
+test your action code in a seperate step.
 
 NLU Comparison
 ##############
 
-If you've made significant changes to your NLU training data (such as adding or splitting intents, or just adding/changing a lot of examples), you should run a full NLU comparison. You'll want to compare the performance of the NLU model without your changes to an NLU model with your changes. You can do this by running NLU testing in cross-validation mode, or by training a model on a training set and testing it on a test set. If you use the latter approach, it is best to shuffle and split your data every time, as opposed to using a static NLU test set, which can easily become outdated. 
-Since this can be a fairly resource intensive test, you can set this test to run only when a certain tag (e.g. "NLU testing required") is present, or only when changes to NLU data or the NLU pipeline were made.
+If you've made significant changes to your NLU training data (such as adding or
+splitting intents, or just adding/changing a lot of examples), you should run a
+full NLU comparison. You'll want to compare the performance of the NLU model
+without your changes to an NLU model with your changes. You can do this by
+running NLU testing in cross-validation mode, or by training a model on a
+training set and testing it on a test set. If you use the latter approach, it
+is best to shuffle and split your data every time, as opposed to using a static
+NLU test set, which can easily become outdated. Since this can be a fairly
+resource intensive test, you can set this test to run only when a certain tag
+(e.g. "NLU testing required") is present, or only when changes to NLU data or
+the NLU pipeline were made.
 
 Code Tests
 ##########
 
-The approach used to test your action code will depend on how it is implemented.
-Whichever method of testing your code you choose, you should include 
-running those tests in your CI pipeline as well. 
+The approach used to test your action code will depend on how it is
+implemented. Whichever method of testing your code you choose, you should
+include running those tests in your CI pipeline as well. 
 
 Continuous Deployment
 ---------------------
 
-To get changes into your deployed assistant frequently, you need to automate as much of the deployment process as possible. 
+To get changes into your deployed assistant frequently, you need to automate as
+much of the deployment process as possible. 
 
-CD usually runs on push or merge to a certain branch, once CI checks have succeeded.
+CD steps usually run on push or merge to a certain branch, once CI checks have
+succeeded.
 
 .. contents::
    :local:
@@ -98,13 +129,24 @@ CD usually runs on push or merge to a certain branch, once CI checks have succee
 Deploying your Rasa Model
 #########################
 
-You should already have a trained model from running end-to-end testing 
-in your CI pipeline. You can set up your pipeline to upload the trained model to your Rasa server. If you're using Rasa X, you can also make an API call to tag the uploaded model as `production` (or whichever environment you want to deploy it to).
+You should already have a trained model from running end-to-end testing in your
+CI pipeline. You can set up your pipeline to upload the trained model to your
+Rasa server. If you're using Rasa X, you can also make an API call to tag the
+uploaded model as `production` (or whichever environment you want to deploy it
+to).
 
-However, if your update includes changes to both your model and your action code, and these changes depend on each other in any way, you should **not** automatically tag the model as ``production``. You will first need to build and deploy your updated action server, so that the new model won't e.g. call actions that don't exist in the pre-update action server.
+However, if your update includes changes to both your model and your action
+code, and these changes depend on each other in any way, you should **not**
+automatically tag the model as ``production``. You will first need to build and
+deploy your updated action server, so that the new model won't e.g. call
+actions that don't exist in the pre-update action server.
 
 Deploying your Action Server
 ############################
 
-If you're using a containerized deployment of your action server, you can 
-automate building a new image, uploading it to an image repository, and deploying a new image tag for each update to your action code. As noted above, you should be careful with automatically deploying a new image tag to production if the action server would be incompatible with the current production model.
+If you're using a containerized deployment of your action server, you can
+automate building a new image, uploading it to an image repository, and
+deploying a new image tag for each update to your action code. As noted above,
+you should be careful with automatically deploying a new image tag to
+production if the action server would be incompatible with the current
+production model.
