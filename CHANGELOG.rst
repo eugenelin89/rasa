@@ -17,14 +17,22 @@ This project adheres to `Semantic Versioning`_ starting with version 1.0.
 
 .. towncrier release notes start
 
+[1.9.4] - 2020-03-30
+^^^^^^^^^^^^^^^^^^^^
+
+Bugfixes
+--------
+- `#5529 <https://github.com/rasahq/rasa/issues/5529>`_: Fix memory leak problem on increasing number of calls to ``/model/parse`` endpoint.
+
+
 [1.9.3] - 2020-03-27
 ^^^^^^^^^^^^^^^^^^^^
 
 Bugfixes
 --------
 - `#5505 <https://github.com/rasahq/rasa/issues/5505>`_: Set default value for ``weight_sparsity`` in ``ResponseSelector`` to ``0``.
-    This fixes a bug in the default behaviour of ``ResponseSelector`` which was accidentally introduced in ``rasa==1.8.0``.
-    Users should update to this version and re-train their models if ``ResponseSelector`` was used in their pipeline.
+  This fixes a bug in the default behaviour of ``ResponseSelector`` which was accidentally introduced in ``rasa==1.8.0``.
+  Users should update to this version and re-train their models if ``ResponseSelector`` was used in their pipeline.
 
 
 [1.9.2] - 2020-03-26
