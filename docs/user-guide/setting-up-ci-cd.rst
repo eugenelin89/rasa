@@ -33,12 +33,13 @@ their own CI/CD tools that you can make use of.
 Continuous Integration
 ----------------------
 
-Assistants are best improved with frequent, incremental updates. No matter how
-small a change is, you want to be sure that it doesn't introduce new problems
-or negatively impact the performance of your model. Most tests are quick enough
-to run on every change. However, you can set some more resource-intentsive
-tests to run only when certain files have been changed or when a certain tag is
-present.
+Assistants are best improved with frequent, `incremental updates
+<https://rasa.com/docs/rasa-x/user-guide/improve-assistant/#making-incremental-updates>`_.
+No matter how small a change is, you want to be sure that it doesn't introduce
+new problems or negatively impact the performance of your model. Most tests are
+quick enough to run on every change. However, you can set some more
+resource-intentsive tests to run only when certain files have been changed or
+when a certain tag is present.
 
 CI checks usually run on commit, or on merge/pull request.
 
@@ -66,7 +67,7 @@ You can run story validation by passing the ``--max-history`` flag to ``rasa
 data validate``, either in a seperate check or as part of the data validation
 check.
 
-Train a model
+Train a Model
 #############
 
 Training a model verifies that your NLU pipeline and policy configurations are
@@ -95,18 +96,18 @@ NLU Comparison
 
 If you've made significant changes to your NLU training data (such as adding or
 splitting intents, or just adding/changing a lot of examples), you should run a
-full NLU comparison. You'll want to compare the performance of the NLU model
-without your changes to an NLU model with your changes. You can do this by
-running NLU testing in cross-validation mode, or by training a model on a
-training set and testing it on a test set. If you use the latter approach, it
-is best to shuffle and split your data every time, as opposed to using a static
-NLU test set, which can easily become outdated. Since this can be a fairly
-resource intensive test, you can set this test to run only when a certain tag
-(e.g. "NLU testing required") is present, or only when changes to NLU data or
-the NLU pipeline were made.
+:ref:`full NLU evaluation <evaluating-an-nlu-model>`. You'll want to compare
+the performance of the NLU model without your changes to an NLU model with your
+changes. You can do this by running NLU testing in cross-validation mode, or by
+training a model on a training set and testing it on a test set. If you use the
+latter approach, it is best to shuffle and split your data every time, as
+opposed to using a static NLU test set, which can easily become outdated. Since
+this can be a fairly resource intensive test, you can set this test to run only
+when a certain tag (e.g. "NLU testing required") is present, or only when
+changes to NLU data or the NLU pipeline were made.
 
-Code Tests
-##########
+Testing Action Code
+###################
 
 The approach used to test your action code will depend on how it is
 implemented. Whichever method of testing your code you choose, you should
@@ -115,7 +116,7 @@ include running those tests in your CI pipeline as well.
 Continuous Deployment
 ---------------------
 
-To get changes into your deployed assistant frequently, you need to automate as
+To get improvements out to your users frequently, you need to automate as
 much of the deployment process as possible. 
 
 CD steps usually run on push or merge to a certain branch, once CI checks have
@@ -131,9 +132,10 @@ Deploying your Rasa Model
 
 You should already have a trained model from running end-to-end testing in your
 CI pipeline. You can set up your pipeline to upload the trained model to your
-Rasa server. If you're using Rasa X, you can also make an API call to tag the
-uploaded model as `production` (or whichever environment you want to deploy it
-to).
+Rasa server. If you're using Rasa X, you can also 
+make an `API call <https://rasa.com/docs/rasa-x/api/rasa-x-http-api/#tag/Models/paths/~1projects~1{project_id}~1models~1{model}~1tags~1{tag}/put>`_ 
+to tag the uploaded model as ``production`` (or whichever `deployment environment <https://rasa.com/docs/rasa-x/enterprise/deployment-environments/#>`_ you want
+to deploy it to).
 
 However, if your update includes changes to both your model and your action
 code, and these changes depend on each other in any way, you should **not**
@@ -144,9 +146,20 @@ actions that don't exist in the pre-update action server.
 Deploying your Action Server
 ############################
 
-If you're using a containerized deployment of your action server, you can
-automate building a new image, uploading it to an image repository, and
-deploying a new image tag for each update to your action code. As noted above,
-you should be careful with automatically deploying a new image tag to
-production if the action server would be incompatible with the current
-production model.
+If you're using a `containerized deployment <https://rasa.com/docs/rasa/user-guide/docker/building-in-docker/#adding-custom-actions>`_
+of your action server, you can automate building a new image, uploading it to
+an image repository, and deploying a new image tag for each update to your
+action code. As noted above, you should be careful with automatically deploying
+a new image tag to production if the action server would be incompatible with
+the current production model.
+
+Example CI/CD pipelines
+-----------------------
+
+As examples, see the CI/CD pipelines for 
+`Sara <https://github.com/RasaHQ/rasa-demo/blob/master/.github/workflows/build_and_deploy.yml>`_,
+the Rasa assistant that you can talk to on this website, and for
+`Carbon Bot <https://github.com/RasaHQ/carbon-bot/blob/master/.github/workflows/model_ci.yml>`_. 
+Both use `Github Actions <https://github.com/features/actions>`_ as a CI/CD tool. These examples are far 
+from the only ways to do it; in fact, if you have a CI/CD set up you'd like to share with the
+Rasa community, please post on the `Rasa Forum <https://forum.rasa.com/>`_.
