@@ -1,10 +1,12 @@
-:desc: Set up a CI/CD pipeline to ensure that iterative improvements are tested and 
-      deployed with minimum manual effort
+:desc: Set up a CI/CD pipeline to ensure that iterative improvements are tested and deployed with minimum manual effort
 
 .. _setting-up-ci-cd:
 
 Setting up CI/CD
 ================
+
+Developping a bot looks a little different than developping a traditional software application, 
+but that doesn't mean you should abandon software development best practices. Setting up CI/CD ensures that incremental updates to your bot are improving it, not harming it.
 
 .. contents::
    :local:
@@ -14,59 +16,29 @@ Setting up CI/CD
 Overview
 --------
 
-Continous Integration (CI) is the practice of merging code changes into a
-master or release branch frequently, and automatically testing those code
-changes before they are integrated. Continuous Deployment (CD) means
+Continous Integration (CI) is the practice of merging in code changes frequently, 
+and automatically testing changes as they are committed.
+Continuous Deployment (CD) means
 automatically deploying integrated changes to a staging or production
 environment. Together, they allow for more frequent improvements to your
 assistant with less manual effort expended on testing and deployment.
 
-You might already have a preferred CI/CD tool. Many Git repository
-hosting services like Github, Gitlab, and Bitbucket also provide their own CI/CD
-tools that you can make use of, depending on where your code is hosted.
+This guide will cover **what** should go in a CI/CD pipeline, specific to a Rasa project. **How** you implement that pipeline is up to you. There are many CI/CD tools out there, and you might already have a preferred one. Many Git repository hosting services like Github, Gitlab, and Bitbucket also provide their own CI/CD tools that you can make use of. 
 
 Continuous Integration
 ----------------------
 
-When improving your assistant, you’ll make different kinds of 
-`incremental updates <https://rasa.com/docs/rasa-x/user-guide/improve-assistant#improve-assistant>`_.
-To be sure that these changes are helping your model instead of hurting it, you
-should set up automatic testing via a continuous integration pipeline. Doing so
-will give you the information and confidence necessary to deploy small changes
-often, to keep improving your assistant over time based on real data.
+Assistants are best improved with frequent, incremental updates. No matter how small a change is, you want to be sure that it doesn't introduce new problems or negatively impact the performance of your model. Most tests are quick enough to run on every change. However, you can set some more resource-intentsive tests to run only when certain files have been changed or when a certain tag is present.
+
+CI checks usually run on commit, or on merge/pull request.
 
 .. contents::
    :local:
 
-Test Data
-~~~~~~~~~
-
-Whenever you make an update to NLU data or stories, you should make sure to
-also update any test data you have. For NLU data, you can simply reshuffle and
-split your training data into train and test sets, or use cross-validation. For
-end-to-end test cases or test stories, you will need to manually verify that
-they are still correct and complete.
-
-The testing recommendations below are cummulative, meaning tests for minor
-updates should also be run for major and architectural updates, and tests for
-major updates should also be run for architectural updates.
-
-Testing Minor Updates
-~~~~~~~~~~~~~~~~~~~~~
-
-Every time you `make a minor iterative update <https://rasa.com/docs/rasa-x/user-guide/improve-assistant/#minor-updates>`_, 
-such as adding more NLU data from your users or saving an unseen successful
-story to your training data, you may not have the resources to run a full
-comparison test to check model performance. However, you should always test
-that, after making changes, your new model will still pass the basic baselines.
-For example, you should check that your test cases that were previously
-successful do not suddenly fail, and that you didn’t introduce any conflicting
-stories.
-
 Validate Data
 #############
 
-:ref:`Data validation <validate-files>` verifies if there are any mistakes or
+:ref:`Data validation <validate-files>` verifies that there are no mistakes or
 major inconsistencies in your domain file, NLU data, or story data. If ``rasa
 data validate`` results in errors, training a model will also fail. By
 including the ``--fail-on-warnings`` flag, the command will also fail on
@@ -79,86 +51,60 @@ Validate Stories
 
 :ref:`Story validation <test-story-files-for-conflicts>` checks if you have any
 stories where different bot actions follow from the same dialogue history.
-Conflicts between will prevent Rasa from learning the correct pattern. You can
+Conflicts between stories will prevent Rasa from learning the correct pattern. You can
 run story validation by passing the ``--max-history`` flag to ``rasa data
-validate``.
+validate``, either in a seperate check or as part of the data validation check.
 
+Train a model
+#############
+
+Training a model verifies that your NLU pipeline and policy configurations are valid and trainable, and it provides a model to test on end-to-end test stories. Training a model is also :ref:`part of the continuous deployment process <uploading-a-model>`, as you'll need a model to upload to your server. 
 
 End-to-End Testing
 ##################
 
-Creating :ref:`end-to-end test stories <end-to-end-testing>` is the best way to
+Testing your trained model on :ref:`end-to-end test stories <end-to-end-testing>` is the best way to
 have confidence in how your assistant will act in certain situations. These
 stories, written in a modified story format, allow you to provide entire
-conversations and test that a bot given this user input will act in the
-expected manner. This is especially important as you start introducing more
-complicated stories from user conversations.
+conversations and test that, given this user input, your model will behave in the expected manner. This is especially important as you start introducing more complicated stories from user conversations. End-to-end testing is only as thorough and accurate as the test cases you write, so you should always update your end-to-end stories concurrently with your training stories.
 
-
-Testing Major Updates
-~~~~~~~~~~~~~~~~~~~~~
-
-For `major updates <https://rasa.com/docs/rasa-x/user-guide/improve-assistant/#major-updates>`_ 
-to your assistant, like merging two intents into one or changing the logic of
-your stories, you should always run a full comparison test to check model
-performance does not decrease. 
+Note: End-to-end stories do **not** execute your action code. You will need to test your action code in a seperate step.
 
 NLU Comparison
 ##############
 
-To perform a full comparison of NLU model performance, you can either test 
-your model on a test set, or using cross-validation. This can be a fairly
-resource intensive test, so you can set this test to run only when a certain
-tag (e.g. "NLU change") is present, or only when changes to NLU data or
-the NLU pipeline were made.
+If you've made significant changes to your NLU training data (such as adding or splitting intents, or just adding/changing a lot of examples), you should run a full NLU comparison. You'll want to compare the performance of the NLU model without your changes to an NLU model with your changes. You can do this by running NLU testing in cross-validation mode, or by training a model on a training set and testing it on a test set. If you use the latter approach, it is best to shuffle and split your data every time, as opposed to using a static NLU test set, which can easily become outdated. 
+Since this can be a fairly resource intensive test, you can set this test to run only when a certain tag (e.g. "NLU testing required") is present, or only when changes to NLU data or the NLU pipeline were made.
 
+Code Tests
+##########
 
-Testing Architectural Updates
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you make an update that `alters the structure of your assistant <https://rasa.com/docs/rasa-x/user-guide/improve-assistant/#architectural-updates>`_,
-like adding a custom component, you will first need to manually verify that
-your assistant still works as expected from an end-user perspective. You should
-also make sure that any tests you have defined as part of your CI pipeline are
-still relevant and correct for your updated structure. 
-
-Testing your Action code
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-The test framework used test your action code will depend on how it is implemented.
+The approach used to test your action code will depend on how it is implemented.
 Whichever method of testing your code you choose, you should include 
-running those tests in your CI pipeline as well.
+running those tests in your CI pipeline as well. 
 
 Continuous Deployment
 ---------------------
 
+To get changes into your deployed assistant frequently, you need to automate as much of the deployment process as possible. 
+
+CD usually runs on push or merge to a certain branch, once CI checks have succeeded.
+
 .. contents::
    :local:
 
-Overview
-~~~~~~~~
-
-
+.. _uploading-a-model:
 
 Deploying your Rasa Model
-~~~~~~~~~~~~~~~~~~~~~~~~~
+#########################
 
 You should already have a trained model from running end-to-end testing 
-in your CI pipeline. If you're using Rasa X, you can have this model 
-posted to Rasa X in your CI pipeline
-<>
-You can make it so that your CI pipeline will automatically post a model to
-Rasa X (you should already have a trained model from testing) on merge You can
-also make it tag as production via api endpoints You shouldn’t do this if you
-action code changed (?)
-<>
+in your CI pipeline. You can set up your pipeline to upload the trained model to your Rasa server. If you're using Rasa X, you can also make an API call to tag the uploaded model as `production` (or whichever environment you want to deploy it to).
 
+However, if your update includes changes to both your model and your action code, and these changes depend on each other in any way, you should **not** automatically tag the model as ``production``. You will first need to build and deploy your updated action server, so that the new model won't e.g. call actions that don't exist in the pre-update action server.
 
 Deploying your Action Server
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+############################
 
 If you're using a containerized deployment of your action server, you can 
-automate building a new image and deploying a new image tag 
-with each update to your action code. 
-
-
+automate building a new image, uploading it to an image repository, and deploying a new image tag for each update to your action code. As noted above, you should be careful with automatically deploying a new image tag to production if the action server would be incompatible with the current production model.
